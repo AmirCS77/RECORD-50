@@ -1,4 +1,4 @@
-# RECORD - https://record-50.onrender.com/
+# RECORD - https://recordapp.live/
 
 #### Video Demo: <https://youtu.be/dAJ1iQERXJY>
 
