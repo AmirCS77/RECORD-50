@@ -6,6 +6,8 @@ import os
 from db import get_db
 from functools import wraps
 from datetime import datetime, timezone, date, timedelta
+from dotenv import load_dotenv
+load_dotenv()
 
 def login_required(f):
     @wraps(f)
@@ -34,6 +36,61 @@ def display_streak(current_streak, last_post_date_str):
         return current_streak
     return 0
 
+import base64
+import time
+
+_spotify_token = {"value": None, "expires_at": 0}
+
+def get_spotify_token():
+    """Get a Spotify access token (Client Credentials), cached until it expires."""
+    # reuse cached token if it's still valid (60s safety margin)
+    if _spotify_token["value"] and time.time() < _spotify_token["expires_at"] - 60:
+        return _spotify_token["value"]
+
+    client_id = os.environ.get("SPOTIFY_CLIENT_ID")
+    client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise ValueError("SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET must be set")
+
+    auth = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    try:
+        resp = requests.post("https://accounts.spotify.com/api/token",
+        headers={"Authorization": f"Basic {auth}"},
+        data={"grant_type": "client_credentials"},
+        timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+    _spotify_token["value"] = data.get("access_token")
+    _spotify_token["expires_at"] = time.time() + data.get("expires_in", 3600)
+    return _spotify_token["value"]
+
+def get_spotify_url(track_name, artist_name):
+    """Searcg Spotify for a track and return the URL or None if not found"""
+    token = get_spotify_token()
+    if not token:
+        return None
+    
+    query = f"track:{track_name} artist:{artist_name}"
+    try:
+        resp = requests.get("https://api.spotify.com/v1/search",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"q": query, "type": "track", "limit": 1},
+        timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+    items = data.get("tracks", {}).get("items", [])
+    if not items:
+        return None
+    return items[0].get("external_urls", {}).get("spotify")
+
 @app.route("/")
 def index():
     if "user_id" not in session:
@@ -44,7 +101,7 @@ def index():
 
     posts = conn.execute(
         """
-        SELECT posts.id, posts.track_name, posts.artist_name, posts.album_art_url, posts.preview_url, posts.apple_music_url, posts.note, posts.created_at, users.username
+        SELECT posts.id, posts.track_name, posts.artist_name, posts.album_art_url, posts.preview_url, posts.apple_music_url, posts.spotify_url, posts.note, posts.created_at, users.username
         FROM posts
         JOIN users ON posts.user_id = users.id
         WHERE DATE(posts.created_at, '+1 hour') = ?
@@ -213,10 +270,16 @@ def post_record():
         flash("You've already posted a song today. Come back tomorrow!")
         return redirect("/search")
 
+    #lookup Spotify link (fails gracefully if not found)
+    try:
+        spotify_url = get_spotify_url(track_name, artist_name)
+    except Exception:
+        spotify_url = None
+
     conn.execute(
         """
-        INSERT INTO posts (user_id, track_id, track_name, artist_name, album_art_url, preview_url, apple_music_url, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO posts (user_id, track_id, track_name, artist_name, album_art_url, preview_url, apple_music_url, spotify_url, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             session["user_id"], 
@@ -226,6 +289,7 @@ def post_record():
             album_art_url, 
             preview_url,
             apple_music_url,
+            spotify_url,
             note or None,
         ),
     )

@@ -45,6 +45,12 @@
                                 Apple Music
                             </a>
                         {% endif %}
+                        {% if post.spotify_url %}
+                            <a class = "music-link" href="{{ post.spotify_url }}" target="_blank" rel="noopener">
+                                <img src="{{ url_for('static', filename='spotify.png') }}" alt="" class="link-icon">
+                                Spotify
+                            </a>
+                        {% endif %}
                         <div class="reactions" data-post-id="{{ post.id }}">
                             {% set counts = reactions.get(post.id, {}) %}
                             <button class="reaction-btn" data-type="fire" aria-label="Fire">🔥<span class="rcount">{{ counts.get("fire", '') }}</span></button>
