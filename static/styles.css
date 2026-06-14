@@ -603,22 +603,23 @@ button[type="submit"]:active,
 }
 
 .link-icon {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     object-fit: contain;
 }
 
 .music-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
+    gap: 5px;
+    padding: 4px 10px;
     margin-top: 6px;
+    margin-right: 6px;
     border: 1px solid #333;
     border-radius: 999px;
     color: #ccc;
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     transition: background 0.15s, border-color 0.15s;
 }
 
@@ -659,4 +660,9 @@ button[type="submit"]:active,
 
 .settings-form button {
     margin-top: 20px;
+}
+
+.music-link img {
+    width: 16px !important;
+    height: 16px !important;
 }

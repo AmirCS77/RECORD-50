@@ -333,17 +333,23 @@ def react():
 
     conn = get_db()
 
-    #already reacted with this type? remove it
+    #find any existing reaction by this user on this post (any type)
     existing = conn.execute(
-        "SELECT id FROM reactions WHERE user_id = ? AND post_id = ? AND type = ?",
-        (session["user_id"], post_id, reaction_type),
+        "SELECT id, type FROM reactions WHERE user_id = ? AND post_id = ?",
+        (session["user_id"], post_id),
     ).fetchone()
 
-    if existing:
+    if existing and existing["type"] == reaction_type:
+        #tapped the same one → remove it
         conn.execute("DELETE FROM reactions WHERE id = ?", (existing["id"],))
+    elif existing:
+        #tapped a different one → switch it
+        conn.execute("UPDATE reactions SET type = ? WHERE id = ?", (reaction_type, existing["id"]))
     else:
+        #no reaction yet → add it
         conn.execute("INSERT INTO reactions (user_id, post_id, type) VALUES (?, ?, ?)", (session["user_id"], post_id, reaction_type))
     conn.commit()
+
 
     #return fresh counts for this post so the page can update
     rows = conn.execute(

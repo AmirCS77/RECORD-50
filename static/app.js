@@ -171,7 +171,7 @@ function playPreview(button) {
     });
 
     button.classList.add("playing");
-    button.querySelector(".play-icon").textContent = "⏸";
+    button.querySelector(".play-icon").textContent = "⏸\uFE0E";
 
     currentAudio = audio;
     currentButton = button;
@@ -207,7 +207,7 @@ document.querySelectorAll(".reaction-btn").forEach((btn) => {
           const t = b.dataset.type;
           const count = data.counts[t] || 0;
           const span = b.querySelector(".rcount");
-          if (span) span.textContent = count;
+          if (span) span.textContent = count > 0 ? count : "";
         });
       } catch (e) {
         // network error — just ignore for now
