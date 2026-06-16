@@ -17,7 +17,7 @@ built a place for one song, one day, one note.
 ### One song per day
 
 Every user can post only one record per day. "Day" means UTC, so the
-feed resets at midnight UTC for everyone. The check happens on the
+feed resets at UTC+5 for everyone. The check happens on the
 server in the `/post` route. It looks at the `posts` table and asks:
 does this user already have a row with today's date? If yes, block.
 If no, allow. I keep this check in Python and not in the database so
