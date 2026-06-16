@@ -23,9 +23,11 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 db.init_app(app)
 db.init_db(app)
 
+DAY_OFFSET_HOURS = 1 # day flip at 4am Almaty time (UTC+5)
+DAY_OFFSET_SQL = f"+{DAY_OFFSET_HOURS} hour"
+
 def record_today():
-    # "day" flips at 4am Almaty time (UTC+5)
-    return (datetime.now(timezone.utc)+ timedelta(hours=1)).date()
+    return (datetime.now(timezone.utc)+ timedelta(hours=DAY_OFFSET_HOURS)).date()
 
 def display_streak(current_streak, last_post_date_str):
     if not last_post_date_str:
@@ -104,7 +106,7 @@ def index():
         SELECT posts.id, posts.track_name, posts.artist_name, posts.album_art_url, posts.preview_url, posts.apple_music_url, posts.spotify_url, posts.note, posts.created_at, users.username
         FROM posts
         JOIN users ON posts.user_id = users.id
-        WHERE DATE(posts.created_at, '+1 hour') = ?
+        WHERE DATE(posts.created_at, ?) = ?
         ORDER BY posts.created_at DESC
         """,
         (today_utc,),
@@ -262,8 +264,8 @@ def post_record():
 
     today_utc = record_today().isoformat()
     already_posted = conn.execute(
-        "SELECT id FROM posts WHERE user_id = ? AND DATE(created_at, '+1 hour') = ?",
-        (session["user_id"], today_utc),
+        "SELECT id FROM posts WHERE user_id = ? AND DATE(created_at, ?) = ?",
+        (session["user_id"], DAY_OFFSET_SQL, today_utc),
     ).fetchone()
 
     if already_posted:
