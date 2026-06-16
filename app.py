@@ -27,7 +27,7 @@ DAY_OFFSET_HOURS = 1 # day flip at 4am Almaty time (UTC+5)
 DAY_OFFSET_SQL = f"+{DAY_OFFSET_HOURS} hour"
 
 def record_today():
-    return (datetime.now(timezone.utc)+ timedelta(hours=DAY_OFFSET_HOURS)).date()
+    return (datetime.now(timezone.utc) + timedelta(hours=DAY_OFFSET_HOURS)).date()
 
 def display_streak(current_streak, last_post_date_str):
     if not last_post_date_str:
@@ -109,7 +109,7 @@ def index():
         WHERE DATE(posts.created_at, ?) = ?
         ORDER BY posts.created_at DESC
         """,
-        (today_utc,),
+        (DAY_OFFSET_SQL, today_utc,),
     ).fetchall()
 
     user_posted_today = any(p["username"] == session["username"] for p in posts)
