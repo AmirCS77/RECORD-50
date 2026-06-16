@@ -16,13 +16,14 @@ built a place for one song, one day, one note.
 
 ### One song per day
 
-Every user can post only one record per day. "Day" means UTC, so the
-feed resets at UTC+5 for everyone. The check happens on the
-server in the `/post` route. It looks at the `posts` table and asks:
-does this user already have a row with today's date? If yes, block.
-If no, allow. I keep this check in Python and not in the database so
-the error message is friendly ("come back tomorrow") instead of a SQL
-crash.
+Every user can post only one record per day. A "day" flips at **4am
+Almaty time (UTC+5)** — the server adds a one-hour offset to UTC before
+comparing dates, so late-night posts still count as the same calendar
+day. The check happens in the `/post` route: it looks at the `posts`
+table and asks whether this user already has a row for today's date.
+If yes, block. If no, allow. I keep this check in Python and not in
+the database so the error message is friendly ("come back tomorrow")
+instead of a SQL crash.
 
 ### Search
 
@@ -56,6 +57,31 @@ play at a time.
 
 The profile page `/user/<username>` shows that user's records, newest
 first, with no date filter. It is the music diary.
+
+## Environment variables
+
+`.env` for local development (`python-dotenv`
+loads it on boot). On Render or another host, set the same variables in
+the dashboard.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `SECRET_KEY` | Production | Signs Flask session cookies. Defaults to a dev placeholder if unset. |
+| `SPOTIFY_CLIENT_ID` | No | Spotify app client ID for track lookup |
+| `SPOTIFY_CLIENT_SECRET` | No | Spotify app client secret |
+| `DATA_DIR` | No | Where `record.db` lives (default: project root) |
+
+**Spotify:** When you post, the server looks up each track on Spotify
+and saves an `open.spotify.com` link on the post row (alongside the
+Apple Music link from iTunes). If the Spotify credentials are missing,
+posting still works — you just won't get Spotify links on feed items.
+
+Get credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+(Client Credentials flow; no user login needed).
+
+**Deploying:** Set `SECRET_KEY` to a long random string. If your host
+has persistent storage, set `DATA_DIR` to that mount path so the SQLite
+file survives redeploys.
 
 ## Files
 
