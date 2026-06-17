@@ -379,7 +379,7 @@ def profile(username):
 
     posts = conn.execute(
         """
-        SELECT id, track_name, artist_name, album_art_url, preview_url, note, created_at 
+        SELECT id, track_name, artist_name, album_art_url, preview_url, apple_music_url, spotify_url, note, created_at 
         FROM posts 
         WHERE user_id = ? 
         ORDER BY created_at DESC
